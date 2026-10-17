@@ -24,26 +24,14 @@
     <v-card
       color="#0B1A2C"
       flat
-      class="camera-card mb-4 position-relative rounded-xl overflow-hidden"
+      class="camera-card position-relative rounded-xl overflow-hidden"
     >
       <!-- Live Camera Badge -->
       <div class="live-badge text-caption white--text px-3 py-1 font-weight-bold">
         Live camera
       </div>
 
-      <!-- Picture-in-Picture 3D Guide -->
-      <v-card
-        color="#E2EDEA"
-        flat
-        class="guide-3d-box pa-2 text-center d-flex flex-column align-center justify-center rounded-lg"
-        @click="enlargeGuide"
-      >
-        <div class="text-caption font-weight-bold brand-text line-height-tight">
-          3D guide<br />tap to<br />enlarge
-        </div>
-      </v-card>
-
-      <!-- Pose Tracking overlay placeholder (Mock Visual Points) -->
+      <!-- Pose Tracking overlay placeholder -->
       <div class="pose-overlay">
         <div class="pose-point head"></div>
         <div class="pose-point shoulder-left"></div>
@@ -65,7 +53,7 @@
     </v-card>
 
     <!-- Feedback / Needs Adjusting Card -->
-    <v-card flat class="feedback-card pa-4 mb-4 border-card-alert rounded-xl overflow-hidden">
+    <v-card flat class="feedback-card pa-4 border-card-alert rounded-xl overflow-hidden">
       <div class="text-caption font-weight-bold red--text text--darken-2 text-uppercase mb-1">
         NEEDS ADJUSTING
       </div>
@@ -77,15 +65,101 @@
       </p>
     </v-card>
 
+    <!-- 3D Avatar Animation Section -->
+    <v-card
+      flat
+      class="avatar-3d-card pa-4 rounded-xl overflow-hidden d-flex flex-column"
+      :class="{ 'avatar-3d-card--maximized': isAvatarMaximized }"
+    >
+      <!-- 3D Canvas Viewport -->
+      <div
+        class="avatar-stage position-relative d-flex justify-center align-center flex-grow-1"
+        :class="{ 'avatar-stage--maximized': isAvatarMaximized }"
+      >
+        <div class="avatar-badge text-caption font-weight-medium">
+          RehabCoach 3D
+        </div>
+
+        <v-btn
+          icon
+          class="avatar-maximize-btn"
+          :aria-label="isAvatarMaximized ? 'Restore avatar panel' : 'Maximize avatar panel'"
+          :title="isAvatarMaximized ? 'Restore avatar panel' : 'Maximize avatar panel'"
+          @click.stop="isAvatarMaximized = !isAvatarMaximized"
+        >
+          <v-icon size="28">{{ isAvatarMaximized ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}</v-icon>
+        </v-btn>
+
+        <!-- Animated 3D Avatar (CSS/SVG Animation) -->
+        <div class="avatar-model" :class="{ 'animating': isPlaying }">
+          <div class="avatar-head"></div>
+          <div class="avatar-torso"></div>
+          <div class="avatar-limbs">
+            <div class="avatar-arm arm-left"></div>
+            <div class="avatar-arm arm-right"></div>
+            <div class="avatar-leg leg-left"></div>
+            <!-- Target Leg -->
+            <div class="avatar-leg leg-right target-leg">
+              <div class="leg-upper"></div>
+              <div class="leg-joint"></div>
+              <div class="leg-lower"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Perspective Grid -->
+        <div class="perspective-grid"></div>
+      </div>
+
+      <!-- Playback Controls -->
+      <div class="d-flex align-center justify-start ga-2 my-3">
+        <v-btn
+          color="#0D9488"
+          dark
+          depressed
+          rounded="pill"
+          class="text-none font-weight-bold px-4"
+          @click="isPlaying = !isPlaying"
+        >
+          {{ isPlaying ? 'Jeda' : 'Putar' }}
+        </v-btn>
+
+        <v-btn
+          v-for="speed in speedOptions"
+          :key="speed"
+          :color="currentSpeed === speed ? '#0D9488' : 'white'"
+          :class="currentSpeed === speed ? 'white--text' : 'grey--text text--darken-3 custom-speed-border'"
+          depressed
+          rounded="pill"
+          small
+          class="text-none font-weight-bold px-3"
+          @click="currentSpeed = speed"
+        >
+          {{ speed }}x
+        </v-btn>
+      </div>
+
+      <!-- Live Metrics & Instructions -->
+      <div class="avatar-metrics text-caption grey--text text--darken-2">
+        <div class="mb-1">
+          Fase: <strong class="black--text">{{ phaseText }}</strong> &nbsp;
+          Sudut: <strong class="black--text">{{ currentAngle }}°</strong> / target <strong class="black--text">50°</strong> &nbsp;
+          Pengulangan: <strong class="black--text">{{ repCount }}</strong>
+        </div>
+        <div class="grey--text text--darken-1 font-weight-medium">
+          Seret avatar untuk memutar. Kaki yang dilatih ditandai warna hijau toska.
+        </div>
+      </div>
+    </v-card>
+
     <!-- Metrics Bars (Muscle & Pressure) -->
-    <v-row dense class="metrics-row mb-3">
+    <v-row dense class="metrics-row">
       <v-col cols="6">
-        <v-card color="#EEF2F6" flat class="pa-3 rounded-xl overflow-hidden">
+        <v-card color="#EEF2F6" flat class="pa-3 rounded-xl overflow-hidden h-100">
           <div class="d-flex justify-space-between text-caption font-weight-bold mb-2">
             <span class="grey--text text--darken-2">Muscle</span>
             <span class="brand-text">Good</span>
           </div>
-          <!-- Custom Pill Track for Progress Bar -->
           <div class="progress-track">
             <v-progress-linear
               value="70"
@@ -99,12 +173,11 @@
       </v-col>
 
       <v-col cols="6">
-        <v-card color="#EEF2F6" flat class="pa-3 rounded-xl overflow-hidden">
+        <v-card color="#EEF2F6" flat class="pa-3 rounded-xl overflow-hidden h-100">
           <div class="d-flex justify-space-between text-caption font-weight-bold mb-2">
             <span class="grey--text text--darken-2">Pressure</span>
             <span class="brand-text">Uneven</span>
           </div>
-          <!-- Custom Pill Track for Progress Bar -->
           <div class="progress-track">
             <v-progress-linear
               value="45"
@@ -119,7 +192,7 @@
     </v-row>
 
     <!-- Last Rep Score Banner -->
-    <v-card flat class="score-card pa-4 mb-6 last-rep-card rounded-xl d-flex justify-space-between align-center overflow-hidden">
+    <v-card flat class="score-card pa-4 last-rep-card rounded-xl d-flex justify-space-between align-center overflow-hidden">
       <div class="text-subtitle-2 font-weight-bold green--text text--darken-3">
         Last rep: Correct
       </div>
@@ -127,35 +200,6 @@
         92%
       </div>
     </v-card>
-
-    <!-- Bottom Action Buttons -->
-    <v-row dense class="action-row">
-      <v-col cols="6">
-        <!-- <v-btn
-          block
-          outlined
-          color="#064D8D"
-          x-large
-          class="text-none font-weight-bold custom-outline-btn rounded-xl py-4"
-          @click="togglePause"
-        >
-          {{ isPaused ? 'Resume' : 'Pause' }}
-        </v-btn> -->
-      </v-col>
-      <v-col cols="6">
-        <!-- <v-btn
-          block
-          color="#064D8D"
-          dark
-          x-large
-          class="text-none font-weight-bold action-btn-fill rounded-xl py-4"
-          elevation="0"
-          @click="nextExercise"
-        >
-          Next exercise
-        </v-btn> -->
-      </v-col>
-    </v-row>
   </div>
 </template>
 
@@ -164,15 +208,19 @@ export default {
   name: 'ExercisePage',
   data() {
     return {
-      isPaused: false
+      isPaused: false,
+      isPlaying: true,
+      isAvatarMaximized: false,
+      currentSpeed: 1,
+      speedOptions: [0.5, 1, 1.5],
+      currentAngle: 2,
+      phaseText: 'Turun',
+      repCount: 39
     }
   },
   methods: {
     exitExercise() {
       this.$router.push('/')
-    },
-    enlargeGuide() {
-      console.log('Enlarge 3D guide clicked')
     },
     togglePause() {
       this.isPaused = !this.isPaused
@@ -187,16 +235,25 @@ export default {
 <style scoped>
 .exercise-page {
   width: 100%;
-  max-width: 1440px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
+/* Mobile Gap Defaults */
+.camera-card,
+.feedback-card,
+.avatar-3d-card,
+.metrics-row {
+  margin-bottom: 16px;
+}
+
+/* ✅ Desktop Grid Layout - Removes vertical right-side gap */
 @media (min-width: 960px) {
   .exercise-page {
     display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.8fr);
-    grid-template-rows: auto auto auto auto auto;
-    gap: 20px 24px;
+    grid-template-columns: 1.25fr 1fr;
+    grid-template-rows: auto auto auto auto;
+    gap: 16px 24px;
     align-items: stretch;
   }
 
@@ -208,17 +265,26 @@ export default {
 
   .camera-card {
     grid-column: 1;
-    grid-row: 2 / span 4;
-    height: min(68vh, 680px);
-    min-height: 440px;
+    grid-row: 2;
+    height: 480px !important;
     margin-bottom: 0 !important;
   }
 
   .feedback-card {
+    grid-column: 1;
+    grid-row: 3 / span 2;
+    margin-bottom: 0 !important;
+  }
+
+  .avatar-3d-card {
     grid-column: 2;
     grid-row: 2;
+    height: 480px !important; /* Matches Camera card height exactly */
     margin-bottom: 0 !important;
-    align-self: start;
+  }
+
+  .avatar-stage {
+    min-height: 220px;
   }
 
   .metrics-row {
@@ -231,23 +297,6 @@ export default {
     grid-column: 2;
     grid-row: 4;
     margin-bottom: 0 !important;
-  }
-
-  .action-row {
-    grid-column: 2;
-    grid-row: 5;
-    align-self: end;
-  }
-
-  .pose-point.head { top: 12.5%; }
-  .pose-point.shoulder-left,
-  .pose-point.shoulder-right { top: 23.5%; }
-  .pose-point.hip-left,
-  .pose-point.hip-right { top: 42%; }
-  .pose-point.knee-bottom { top: 73.5%; }
-
-  .knee-target-circle {
-    top: 58%;
   }
 }
 
@@ -279,17 +328,6 @@ export default {
   left: 14px;
   background-color: rgba(0, 0, 0, 0.6);
   border-radius: 8px !important;
-  z-index: 2;
-}
-
-.guide-3d-box {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 85px;
-  height: 110px;
-  border-radius: 14px !important;
-  cursor: pointer;
   z-index: 2;
 }
 
@@ -346,7 +384,161 @@ export default {
   border-radius: 50%;
 }
 
-/* 2. Needs Adjusting Card */
+/* 2. 3D Avatar Section Styles */
+.avatar-3d-card {
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 20px !important;
+  background-color: #FFFFFF !important;
+}
+
+.avatar-stage {
+  height: 220px;
+  background: radial-gradient(circle at center, #FFFFFF 40%, #F8FAFC 100%);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.avatar-maximize-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.92);
+}
+
+.avatar-3d-card--maximized {
+  position: fixed !important;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  overflow-y: auto !important;
+}
+
+.avatar-stage--maximized {
+  flex: 1;
+  min-height: 60vh;
+}
+
+.avatar-stage--maximized .avatar-model {
+  transform: scale(2.5);
+}
+
+.avatar-badge {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: #475569;
+  z-index: 3;
+}
+
+.avatar-model {
+  position: relative;
+  width: 40px;
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+}
+
+.avatar-head {
+  width: 24px;
+  height: 24px;
+  background-color: #B0C4DE;
+  border-radius: 50%;
+  margin-bottom: 2px;
+}
+
+.avatar-torso {
+  width: 14px;
+  height: 50px;
+  background-color: #CBD5E1;
+  border-radius: 6px;
+}
+
+.avatar-limbs {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+}
+
+.avatar-arm {
+  position: absolute;
+  width: 8px;
+  height: 38px;
+  background-color: #94A3B8;
+  border-radius: 4px;
+  top: 28px;
+}
+
+.arm-left { left: -2px; }
+.arm-right { right: -2px; }
+
+.avatar-leg {
+  position: absolute;
+  width: 12px;
+  height: 60px;
+  top: 74px;
+  border-radius: 6px;
+}
+
+.leg-left {
+  left: 6px;
+  background-color: #CBD5E1;
+}
+
+.target-leg {
+  right: 4px;
+  background-color: #14B8A6;
+  transform-origin: top center;
+}
+
+.animating .target-leg {
+  animation: legLift 2.2s infinite ease-in-out;
+}
+
+@keyframes legLift {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-45deg);
+  }
+}
+
+.perspective-grid {
+  position: absolute;
+  bottom: 10px;
+  width: 260px;
+  height: 100px;
+  background-image: 
+    linear-gradient(to right, rgba(203, 213, 225, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(203, 213, 225, 0.4) 1px, transparent 1px);
+  background-size: 20px 20px;
+  transform: rotateX(65deg) rotateZ(-10deg);
+  transform-style: preserve-3d;
+}
+
+.custom-speed-border {
+  border: 1px solid #E2E8F0 !important;
+}
+
+/* 3. Needs Adjusting Card */
 .border-card-alert {
   border: 1.5px solid #FCA5A5 !important;
   background-color: #FFFFFF !important;
@@ -354,7 +546,7 @@ export default {
   box-shadow: 0px 4px 15px rgba(220, 38, 38, 0.05) !important;
 }
 
-/* 3. Progress Bar Track Fix */
+/* 4. Progress Track */
 .progress-track {
   width: 100%;
   background-color: #E2E8F0;
@@ -363,14 +555,14 @@ export default {
   overflow: hidden;
 }
 
-/* 4. Last Rep Box */
+/* 5. Last Rep Box */
 .last-rep-card {
   background-color: #E6F4EA !important;
   border: 1.5px solid #34A853 !important;
   border-radius: 20px !important;
 }
 
-/* 5. Action Buttons */
+/* 6. Action Buttons */
 .custom-outline-btn {
   border: 2px solid #064D8D !important;
   border-radius: 16px !important;
