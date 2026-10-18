@@ -6,7 +6,7 @@
     "dev": "node --localstorage-file=.nuxt/localstorage node_modules/nuxt/bin/nuxt.js",
     "build": "node --localstorage-file=.nuxt/localstorage node_modules/nuxt/bin/nuxt.js build",
     "start": "nuxt start",
-    "generate": "nuxt generate"
+    "generate": "node --localstorage-file=.nuxt/localstorage node_modules/nuxt/bin/nuxt.js generate"
   },
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",
