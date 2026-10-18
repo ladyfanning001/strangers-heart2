@@ -47,9 +47,9 @@
 
       <div v-if="!cameraActive" class="camera-placeholder">
         <span class="camera-symbol">⌾</span>
-        <span class="white--text text-body-2 mt-2">{{ cameraError || 'Camera ready for tracking' }}</span>
+        <span class="white--text text-body-2 mt-2">{{ cameraStatus }}</span>
         <v-btn
-          v-if="cameraError"
+          v-if="cameraError && !isRequestingCamera"
           small
           outlined
           color="white"
@@ -234,6 +234,8 @@ export default {
       landmarkCount: 0,
       cameraActive: false,
       cameraError: '',
+      cameraStatus: 'Requesting camera...',
+      isRequestingCamera: false,
       feedbackState: 'adjust',
       feedbackMessage: 'Right knee: lift higher',
       footPressure: 45,
@@ -273,27 +275,58 @@ export default {
       }, 450)
     },
     async startPoseTracking() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        this.cameraError = 'Camera is not supported in this browser'
+        this.cameraStatus = this.cameraError
+        return
+      }
       this.cameraError = ''
+      this.cameraStatus = 'Requesting camera...'
+      this.isRequestingCamera = true
       try {
-        const [{ Pose }, { Camera }] = await Promise.all([
-          import('@mediapipe/pose/pose'),
-          import('@mediapipe/camera_utils/camera_utils')
-        ])
-        this.poseModel = new Pose({ locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` })
-        this.poseModel.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 })
-        this.poseModel.onResults(this.onPoseResults)
         this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false })
         this.$refs.camera.srcObject = this.cameraStream
+        await new Promise(resolve => {
+          if (this.$refs.camera.readyState >= 1) {
+            resolve()
+          } else {
+            this.$refs.camera.addEventListener('loadedmetadata', resolve, { once: true })
+          }
+        })
         await this.$refs.camera.play()
         this.cameraActive = true
-        this.camera = new Camera(this.$refs.camera, { onFrame: async () => this.poseModel.send({ image: this.$refs.camera }), width: 640, height: 480 })
-        this.camera.start()
+        this.isRequestingCamera = false
+        this.cameraStatus = 'Camera live'
+
+        try {
+          const [{ Pose }, { Camera }] = await Promise.all([
+            import('@mediapipe/pose/pose'),
+            import('@mediapipe/camera_utils/camera_utils')
+          ])
+          this.poseModel = new Pose({ locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` })
+          this.poseModel.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 })
+          this.poseModel.onResults(this.onPoseResults)
+          this.camera = new Camera(this.$refs.camera, { onFrame: async () => this.poseModel.send({ image: this.$refs.camera }), width: 640, height: 480 })
+          this.camera.start()
+        } catch (error) {
+          this.cameraStatus = 'Camera live - pose tracking unavailable'
+        }
       } catch (error) {
+        if (this.cameraStream) {
+          this.cameraStream.getTracks().forEach(track => track.stop())
+          this.cameraStream = null
+        }
+        if (this.$refs.camera) this.$refs.camera.srcObject = null
         this.cameraActive = false
-        this.cameraError = error.name === 'NotAllowedError'
-          ? 'Camera permission is blocked'
-          : 'Camera could not start'
+        this.isRequestingCamera = false
+        this.cameraError = {
+          NotAllowedError: 'Camera permission is blocked. Allow camera access and try again.',
+          NotFoundError: 'No camera was found on this device.',
+          NotReadableError: 'Camera is already being used by another app.',
+          SecurityError: 'Camera requires a secure connection.'
+        }[error.name] || 'Camera could not start. Check browser permissions and try again.'
+        this.cameraStatus = this.cameraError
+        console.error('Unable to start camera:', error)
       }
     },
     onPoseResults(results) {
@@ -516,16 +549,19 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: #071522;
 }
 
 .camera-video {
+  z-index: 0;
+  background: #071522;
   transform: scaleX(-1);
-  opacity: 0.82;
+  opacity: 1;
 }
 
 .pose-canvas {
   z-index: 1;
+  background: transparent;
+  pointer-events: none;
   transform: scaleX(-1);
 }
 
