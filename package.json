@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "nuxt",
-    "build": "nuxt build",
+    "dev": "node --localstorage-file=.nuxt/localstorage node_modules/nuxt/bin/nuxt.js",
+    "build": "node --localstorage-file=.nuxt/localstorage node_modules/nuxt/bin/nuxt.js build",
     "start": "nuxt start",
     "generate": "nuxt generate"
   },
