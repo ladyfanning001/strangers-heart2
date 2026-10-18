@@ -31,7 +31,7 @@
                   max-height="40"
                   contain
                 />
-                <v-icon v-else size="24">{{ item.icon }}</v-icon>
+                <span v-else class="fallback-icon">{{ item.title === 'Home' ? '⌂' : '✎' }}</span>
               </v-list-item-icon>
               <v-list-item-title>{{ item.title }}</v-list-item-title>
             </template>
@@ -54,7 +54,7 @@
                   max-height="40"
                   contain
                 />
-                <v-icon v-else size="24">{{ child.icon }}</v-icon>
+                  <span v-else class="fallback-icon">•</span>
               </v-list-item-icon>
               <v-list-item-title>{{ child.title }}</v-list-item-title>
             </v-list-item>
@@ -78,7 +78,7 @@
                 max-height="40"
                 contain
               />
-              <v-icon v-else size="24">{{ item.icon }}</v-icon>
+              <span v-else class="fallback-icon">{{ item.title === 'Home' ? '⌂' : '✎' }}</span>
             </v-list-item-icon>
             <v-list-item-title>{{ item.title }}</v-list-item-title>
           </v-list-item>
@@ -90,7 +90,7 @@
         <v-list nav dense class="pa-2">
           <v-list-item link class="sidebar-item" @click="handleLogout">
             <v-list-item-icon>
-              <v-icon size="24">mdi-logout</v-icon>
+                <span class="fallback-icon">↪</span>
             </v-list-item-icon>
             <v-list-item-title>Logout</v-list-item-title>
           </v-list-item>
@@ -212,6 +212,16 @@ export default {
 .sidebar-item .v-icon,
 .sidebar-subitem .v-icon {
   color: #0d3b73 !important;
+}
+
+.fallback-icon {
+  display: inline-flex;
+  width: 24px;
+  align-items: center;
+  justify-content: center;
+  color: #0d3b73;
+  font-size: 21px;
+  font-weight: 700;
 }
 
 /* icon when it is active */
